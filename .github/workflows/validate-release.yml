@@ -1,0 +1,72 @@
+name: Validate release assets
+
+on:
+  release:
+    types: [published, edited]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to validate (e.g. 2026.05.17)'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "value=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p _release
+          gh release download "${{ steps.tag.outputs.value }}" \
+            --repo "${{ github.repository }}" \
+            --pattern 'dmd_medications.json' \
+            --pattern 'dmd_medications.json.sha256' \
+            --dir _release
+
+      - name: Verify SHA-256
+        run: |
+          set -euo pipefail
+          cd _release
+          # Re-derive the digest from the JSON and compare against the sidecar.
+          expected=$(awk '{print $1}' dmd_medications.json.sha256)
+          actual=$(sha256sum dmd_medications.json | awk '{print $1}')
+          echo "expected: $expected"
+          echo "actual:   $actual"
+          if [ "$expected" != "$actual" ]; then
+            echo '::error::SHA-256 sidecar does not match dmd_medications.json'
+            exit 1
+          fi
+
+      - name: Validate JSON shape
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, sys
+          data = json.load(open('_release/dmd_medications.json', encoding='utf-8'))
+          assert isinstance(data, dict), 'root must be an object'
+          meds = data.get('medications')
+          assert isinstance(meds, list) and meds, 'medications must be a non-empty list'
+          for i, m in enumerate(meds[:5]):
+              assert isinstance(m, dict), f'medication[{i}] must be an object'
+              assert m.get('name'), f'medication[{i}] missing name'
+          size_mb = len(open('_release/dmd_medications.json', 'rb').read()) / (1024 * 1024)
+          assert size_mb < 50, f'pack {size_mb:.2f} MB exceeds 50 MB client cap'
+          print(f'OK — {len(meds):,} medications, {size_mb:.2f} MB, schema valid')
+          PY
