@@ -34,7 +34,7 @@ done
 : "${TRUD_API_KEY:?Set TRUD_API_KEY env var (isd.digital.nhs.uk/trud -> account -> API key)}"
 
 REPO="Feridoun/zehnama-dmd-data"
-ITEM_ID=105
+ITEM_ID=24   # NHS BSA dm+d weekly release pack
 TRUD_API="https://isd.digital.nhs.uk/trud/api/v1"
 
 for tool in gh python3 jq curl unzip; do
