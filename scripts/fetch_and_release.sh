@@ -51,7 +51,7 @@ trap 'rm -rf "$WORK"' EXIT
 
 # --- 1. Query TRUD for latest release ---------------------------------------
 echo "[1/6] Querying TRUD for the latest dm+d release..."
-META=$(curl -fsS "$TRUD_API/keys/$TRUD_API_KEY/items/$ITEM_ID/releases/latest")
+META=$(curl -fsS "$TRUD_API/keys/$TRUD_API_KEY/items/$ITEM_ID/releases?latest")
 ARCHIVE_URL=$(echo "$META" | jq -r '.releases[0].archiveFileUrl // empty')
 RELEASE_DATE=$(echo "$META" | jq -r '.releases[0].releaseDate // empty')
 if [[ -z "$ARCHIVE_URL" || -z "$RELEASE_DATE" ]]; then
