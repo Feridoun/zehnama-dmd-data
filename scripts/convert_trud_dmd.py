@@ -4,7 +4,7 @@
 The TRUD dm+d distribution is a ZIP of XML files. The principal files are:
 
     f_vmp2_*.xml      Virtual Medicinal Products (the dispensable abstractions)
-    f_vtm_*.xml       Virtual Therapeutic Moieties (the drug-substance roots)
+    f_vtm2?_*.xml       Virtual Therapeutic Moieties (the drug-substance roots)
     f_lookup2_*.xml   Code-to-description lookups (forms, routes, units)
     f_amp_*.xml       Actual Medicinal Products (brand-level — optional here)
     f_bnf_*.xml       BNF mappings (optional, may live in supplementary pack)
@@ -240,7 +240,7 @@ def build_pack(
     limit: int,
 ) -> dict:
     lookup_xml = find_one(folder, r"^f_lookup2_")
-    vtm_xml = find_one(folder, r"^f_vtm_")
+    vtm_xml = find_one(folder, r"^f_vtm2?_")
     vmp_xml = find_one(folder, r"^f_vmp2?_")
     amp_xml = find_one(folder, r"^f_amp_") if include_amp else None
 
@@ -250,7 +250,7 @@ def build_pack(
             "Did you pass the correct ZIP / folder?"
         )
     if not vtm_xml:
-        raise SystemExit("ERROR: Could not find f_vtm_*.xml.")
+        raise SystemExit("ERROR: Could not find f_vtm2?_*.xml.")
 
     lookups = parse_lookups(lookup_xml) if lookup_xml else Lookups()
     vtms = parse_vtms(vtm_xml)
